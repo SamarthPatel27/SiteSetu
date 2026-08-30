@@ -1,48 +1,131 @@
-import React, { useMemo, useState } from "react";
-import { Link, Routes, Route, useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, Routes, Route, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API = "http://localhost:5000/api";
-const KEY = { user:"sitesetuUser", bookings:"sitesetuBookings", projects:"sitesetuProjects", messages:"sitesetuMessages", notes:"sitesetuNotifications", profiles:"sitesetuProfiles" };
+const API = "https://sitesetu.onrender.com/api";
 
-const demoProfessionals = [
-  {id:1,name:"Rahul Sharma",category:"Architect",location:"Udaipur",experience:"8 Years",rating:"4.9",projects:"120+",price:1500,icon:"🏛️",verified:true,about:"Residential architect specialising in modern homes, planning and 3D design."},
-  {id:2,name:"Amit Verma",category:"Civil Engineer",location:"Jaipur",experience:"10 Years",rating:"4.8",projects:"180+",price:1800,icon:"🏗️",verified:true,about:"Civil and structural consultant for residential construction and estimation."},
-  {id:3,name:"Priya Mehta",category:"Interior Designer",location:"Delhi",experience:"6 Years",rating:"4.9",projects:"90+",price:1200,icon:"🛋️",verified:true,about:"Interior designer focused on functional, premium and budget-friendly spaces."},
-  {id:4,name:"Vikram Singh",category:"Architect",location:"Jaipur",experience:"7 Years",rating:"4.7",projects:"75+",price:1400,icon:"🏛️",verified:true,about:"Contemporary residential architect with end-to-end design support."},
-  {id:5,name:"Neha Gupta",category:"Interior Designer",location:"Udaipur",experience:"5 Years",rating:"4.8",projects:"65+",price:1100,icon:"🛋️",verified:true,about:"Home interiors, modular kitchens, furniture layouts and styling."},
-  {id:6,name:"Rakesh Patel",category:"Civil Engineer",location:"Delhi",experience:"9 Years",rating:"4.8",projects:"140+",price:1600,icon:"🏗️",verified:true,about:"Construction supervision, BOQ, estimation and structural coordination."}
-];
+function Home() {
+  const [services, setServices] = useState([]);
 
-const get = (k, fallback=[]) => { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fallback)); } catch { return fallback; } };
-const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
-const currentUser = () => get(KEY.user, null);
+  useEffect(() => {
+    axios
+      .get(`${API}/services`)
+      .then((res) => setServices(res.data))
+      .catch((err) => console.error(err));
+  }, []);
 
-function Nav(){ const u=currentUser(); return <nav className="navbar"><Link className="brand" to="/">SiteSetu</Link><div className="navlinks"><a href="/#services">Services</a><a href="/#how">How It Works</a>{u ? <Link className="login-btn" to={u.role==="Professional"?"/professional-dashboard":"/homeowner-dashboard"}>Dashboard</Link> : <Link className="login-btn" to="/login">Login</Link>}<Link className="primary-btn" to="/register">Get Started</Link></div></nav> }
+  return (
+    <div>
+      <h1>SiteSetu</h1>
+      <p>Find trusted professionals for your construction needs.</p>
 
-function Home(){ return <div><Nav/><section className="hero"><div className="hero-copy"><span className="eyebrow">YOUR CONSTRUCTION COMPANION</span><h1>Build with confidence.<br/><span>Find the right expert.</span></h1><p>Connect with verified architects, civil engineers and interior designers for your residential construction project.</p><div className="hero-actions"><Link to="/professionals" className="primary-btn large">Find a Professional</Link><a href="#how" className="secondary-btn large">How it works</a></div></div><div className="hero-card"><div className="card-top"><span className="status-dot"/> Trusted professionals</div><div className="metric">3+</div><div className="muted">Professional categories</div><div className="mini-grid"><div>🏛️ <b>Architects</b></div><div>🏗️ <b>Civil Engineers</b></div><div>🛋️ <b>Interior Designers</b></div></div></div></section><section id="services" className="section"><div className="section-heading"><span className="eyebrow">SERVICES</span><h2>Everything for your next project.</h2><p>From concept to construction, find the right professional and manage consultations in one place.</p></div><div className="service-grid">{[["🏛️","Architectural Design","Planning, floor plans, elevations and 3D concepts."],["🏗️","Civil Engineering","Structural guidance, estimation and construction support."],["🛋️","Interior Design","Functional interiors, layouts, materials and styling."]].map(x=><article className="service-card" key={x[1]}><div className="icon">{x[0]}</div><h3>{x[1]}</h3><p>{x[2]}</p><Link to="/professionals">Explore →</Link></article>)}</div></section><section id="how" className="section process"><div className="section-heading"><span className="eyebrow">HOW IT WORKS</span><h2>Simple from start to finish.</h2></div><div className="steps">{[["01","Create your account","Register as a homeowner or professional."],["02","Find a professional","Search by category, name or location."],["03","Book a consultation","Send your requirements and track the request."]].map(x=><div key={x[0]}><span>{x[0]}</span><h3>{x[1]}</h3><p>{x[2]}</p></div>)}</div></section><footer><b>SiteSetu</b><span>Connecting homeowners with construction & design professionals.</span></footer></div> }
+      <h2>Available Services</h2>
 
-function Auth({register=false}){ const nav=useNavigate(); const [f,setF]=useState({name:"",email:"",password:"",role:"Homeowner"}); const [loading,setLoading]=useState(false); const submit=async e=>{e.preventDefault();setLoading(true);try{const r=await axios.post(`${API}/auth/${register?"register":"login"}`,f); if(!r.data.success) throw Error(r.data.message); if(r.data.user) save(KEY.user,r.data.user); if(r.data.token) localStorage.setItem("token",r.data.token); alert(register?"Registration successful!":"Login successful!"); const role=r.data.user?.role||f.role; nav(role==="Professional"?"/professional-dashboard":role==="Admin"?"/admin":"/homeowner-dashboard");}catch(err){alert(err.response?.data?.message||err.message||"Request failed. Check backend.");}finally{setLoading(false)}}; return <div className="auth-page"><div className="auth-card"><Link to="/" className="auth-logo">SiteSetu</Link><h1>{register?"Create Account":"Welcome Back"}</h1><p className="auth-subtitle">{register?"Create your account to get started.":"Login to continue to your SiteSetu account."}</p><form onSubmit={submit}>{register&&<><label>Full Name</label><input required placeholder="Enter your name" value={f.name} onChange={e=>setF({...f,name:e.target.value})}/></>}<label>Email Address</label><input required type="email" placeholder="you@example.com" value={f.email} onChange={e=>setF({...f,email:e.target.value})}/><label>Password</label><input required minLength="6" type="password" placeholder="Minimum 6 characters" value={f.password} onChange={e=>setF({...f,password:e.target.value})}/>{register&&<><label>Account Type</label><div className="role-grid"><button type="button" className={`role ${f.role==="Homeowner"?"active":""}`} onClick={()=>setF({...f,role:"Homeowner"})}>🏠<strong>Homeowner</strong><small>Find professionals</small></button><button type="button" className={`role ${f.role==="Professional"?"active":""}`} onClick={()=>setF({...f,role:"Professional"})}>👷<strong>Professional</strong><small>Offer your services</small></button></div></>}<button className="auth-button" disabled={loading}>{loading?"Please wait...":register?"Create Account":"Login"}</button></form><p className="auth-bottom">{register?"Already have an account?":"Don't have an account?"} <Link to={register?"/login":"/register"}>{register?"Login":"Create Account"}</Link></p></div></div> }
+      {services.length === 0 ? (
+        <p>Loading services...</p>
+      ) : (
+        services.map((service) => (
+          <div key={service.id}>
+            <h3>{service.title}</h3>
+            <p>
+              <strong>Category:</strong> {service.category}
+            </p>
+            <p>{service.description}</p>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
-function DashboardShell({children,title="Professional Panel",tabs=true}){ const nav=useNavigate(); const u=currentUser()||{}; const logout=()=>{localStorage.removeItem(KEY.user);localStorage.removeItem("token");nav("/")}; return <div className="dashboard-page"><nav className="dashboard-navbar"><Link to="/" className="brand">SiteSetu</Link><div className="dashboard-user"><span>👷 {u.name||"User"}</span><button onClick={logout}>Logout</button></div></nav>{tabs&&<><div className="dashboard-title"><h2>{title}</h2></div><div className="dashboard-tabs"><Link to={u.role==="Professional"?"/professional-dashboard":"/homeowner-dashboard"}>Overview</Link><Link to={u.role==="Professional"?"/professional-dashboard?tab=profile":"/homeowner-dashboard?tab=profile"}>My Profile</Link><Link to={u.role==="Professional"?"/professional-dashboard?tab=projects":"/homeowner-dashboard?tab=projects"}>Projects</Link><Link to={u.role==="Professional"?"/professional-dashboard?tab=bookings":"/homeowner-dashboard?tab=bookings"}>Bookings</Link><Link to="/homeowner-dashboard?tab=messages">Messages</Link><Link to="/homeowner-dashboard?tab=notifications">Notifications</Link></div></>}{children}</div> }
+function Login() {
+  const navigate = useNavigate();
 
-function ProfessionalDashboard(){ const u=currentUser()||{}; const [tab,setTab]=useState(new URLSearchParams(location.search).get("tab")||"overview"); const [profile,setProfile]=useState(()=>get(KEY.profiles,{})[u.email]||{category:"Architect",experience:"5+ Years",location:"Udaipur",phone:"",skills:"Residential Design, Planning, 3D Design",about:"Experienced construction and design professional helping homeowners with residential projects."}); const [saved,setSaved]=useState(false); const bookings=get(KEY.bookings,[]).filter(b=>b.professionalEmail===u.email); const projects=get(KEY.projects,[]).filter(p=>p.professionalEmail===u.email); const notes=get(KEY.notes,[]).filter(n=>n.email===u.email); const setTab2=t=>{setTab(t);history.replaceState({},"",`/professional-dashboard${t==="overview"?"":"?tab="+t}`)}; const saveProfile=()=>{const all=get(KEY.profiles,{});all[u.email]=profile;save(KEY.profiles,all);setSaved(true);setTimeout(()=>setSaved(false),1800)}; const status=(id,s)=>{const all=get(KEY.bookings,[]);const x=all.find(b=>b.id===id);if(x)x.status=s;save(KEY.bookings,all);location.reload()}; return <DashboardShell><main className="dashboard-content"><div className="dashboard-header"><div><span className="eyebrow">PROFESSIONAL DASHBOARD</span><h1>Welcome, {u.name||"Professional"} 👋</h1><p>Manage your profile, projects and consultation requests.</p></div><button className="primary-btn" onClick={()=>setTab2("profile")}>Edit Profile</button></div><div className="dashboard-grid"><Stat icon="📁" n={projects.length} t="Active Projects"/><Stat icon="📅" n={bookings.length} t="Bookings"/><Stat icon="💬" n={notes.length} t="Messages"/></div><div className="dashboard-tabs inner-tabs">{[["overview","Overview"],["profile","My Profile"],["projects","Projects"],["bookings","Bookings"],["notifications","Notifications"]].map(x=><button className={tab===x[0]?"active":""} onClick={()=>setTab2(x[0])} key={x[0]}>{x[1]}</button>)}</div>{tab==="overview"&&<><section className="dashboard-section-card"><h2>Quick Actions</h2><div className="quick-grid"><button onClick={()=>setTab2("profile")}>✏️ Update Profile</button><button onClick={()=>setTab2("projects")}>📁 Manage Projects</button><button onClick={()=>setTab2("bookings")}>📅 Review Bookings</button></div></section><section className="dashboard-section-card"><h2>Recent Requests</h2>{bookings.length?<BookingList bookings={bookings} professional onStatus={status}/>:<Empty title="No consultation requests" text="New homeowner requests will appear here." icon="📅"/>}</section></>}{tab==="profile"&&<section className="dashboard-section-card"><h2>Professional Profile</h2><div className="profile-form"><Field label="Full Name" value={u.name||""} disabled/><Field label="Email" value={u.email||""} disabled/><label>Professional Category<select value={profile.category} onChange={e=>setProfile({...profile,category:e.target.value})}><option>Architect</option><option>Civil Engineer</option><option>Interior Designer</option></select></label><label>Experience<select value={profile.experience} onChange={e=>setProfile({...profile,experience:e.target.value})}><option>1-2 Years</option><option>3-5 Years</option><option>5+ Years</option><option>10+ Years</option></select></label><Field label="Location" value={profile.location} onChange={e=>setProfile({...profile,location:e.target.value})}/><Field label="Phone" value={profile.phone} placeholder="Enter phone number" onChange={e=>setProfile({...profile,phone:e.target.value})}/><label className="full-width">Skills<input value={profile.skills} onChange={e=>setProfile({...profile,skills:e.target.value})}/></label><label className="full-width">About<textarea value={profile.about} onChange={e=>setProfile({...profile,about:e.target.value})}/></label><div className="full-width"><button className="save-profile-btn" onClick={saveProfile}>{saved?"✓ Profile Saved":"Save Profile"}</button></div></div></section>}{tab==="projects"&&<Projects professionalEmail={u.email}/>} {tab==="bookings"&&<section className="dashboard-section-card"><h2>Consultation Bookings</h2>{bookings.length?<BookingList bookings={bookings} professional onStatus={status}/>:<Empty title="No bookings yet" text="Homeowner requests will appear here." icon="📅"/>}</section>}{tab==="notifications"&&<section className="dashboard-section-card"><h2>Notifications</h2>{notes.length?notes.map(n=><div className="notification" key={n.id}><b>{n.title}</b><p>{n.message}</p><small>{n.time}</small></div>):<Empty title="All caught up" text="New bookings, messages and platform updates will appear here." icon="🔔"/>}</section>}</main></DashboardShell> }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-function HomeownerDashboard(){const u=currentUser()||{}; const [search,setSearch]=useState(""); const [cat,setCat]=useState("All"); const [tab,setTab]=useState(new URLSearchParams(location.search).get("tab")||"overview"); const bookings=get(KEY.bookings,[]).filter(b=>b.homeownerEmail===u.email); const notes=get(KEY.notes,[]).filter(n=>n.email===u.email); const filtered=demoProfessionals.filter(p=>(cat==="All"||p.category===cat)&&`${p.name} ${p.category} ${p.location}`.toLowerCase().includes(search.toLowerCase())); const setTab2=t=>{setTab(t);history.replaceState({},"",`/homeowner-dashboard${t==="overview"?"":"?tab="+t}`)}; return <DashboardShell title="Homeowner Panel"><main className="dashboard-content"><div className="dashboard-header"><div><span className="eyebrow">HOMEOWNER DASHBOARD</span><h1>Find the right professional.</h1><p>Search, compare and book trusted construction experts.</p></div><Link className="primary-btn" to="/professionals">Browse Professionals</Link></div><div className="dashboard-grid"><Stat icon="📁" n={bookings.filter(b=>b.status==="Accepted").length} t="Active Projects"/><Stat icon="📅" n={bookings.length} t="Bookings"/><Stat icon="💬" n={notes.length} t="Messages"/></div><div className="dashboard-tabs inner-tabs">{[["overview","Overview"],["profile","My Profile"],["projects","Projects"],["bookings","Bookings"],["messages","Messages"],["notifications","Notifications"]].map(x=><button className={tab===x[0]?"active":""} onClick={()=>setTab2(x[0])} key={x[0]}>{x[1]}</button>)}</div>{tab==="overview"&&<><div className="search-panel"><input placeholder="Search by name, category or location..." value={search} onChange={e=>setSearch(e.target.value)}/><select value={cat} onChange={e=>setCat(e.target.value)}><option>All</option><option>Architect</option><option>Civil Engineer</option><option>Interior Designer</option></select></div><section className="dashboard-section-card"><h2>Recommended Professionals</h2><div className="professional-grid">{filtered.map(p=><ProfessionalCard key={p.id} p={p}/>)}</div>{!filtered.length&&<Empty title="No professionals found" text="Try another search or category."/>}</section></>}{tab==="profile"&&<section className="dashboard-section-card"><h2>My Profile</h2><p>Your account is ready. You can update your professional preferences during booking.</p><div className="profile-summary"><b>{u.name}</b><span>{u.email}</span><span>🏠 Homeowner</span></div></section>}{tab==="projects"&&<Projects homeownerEmail={u.email}/>} {tab==="bookings"&&<section className="dashboard-section-card"><h2>My Bookings</h2>{bookings.length?<BookingList bookings={bookings}/>:<Empty title="No bookings yet" text="Find a professional and request your first consultation." icon="📅"/>}</section>}{tab==="messages"&&<Messages email={u.email}/>} {tab==="notifications"&&<section className="dashboard-section-card"><h2>Notifications</h2>{notes.length?notes.map(n=><div className="notification" key={n.id}><b>{n.title}</b><p>{n.message}</p><small>{n.time}</small></div>):<Empty title="All caught up" text="New bookings, messages and platform updates will appear here." icon="🔔"/>}</section>}</main></DashboardShell> }
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setMessage("");
 
-function ProfessionalCard({p}){return <article className="professional-card"><div className="professional-top"><div className="professional-avatar">{p.icon}</div>{p.verified&&<span className="verified">✓ Verified</span>}</div><h2>{p.name}</h2><p className="professional-category">{p.category}</p><p>{p.about}</p><div className="professional-details"><span>📍 {p.location}</span><span>⭐ {p.rating}</span><span>💼 {p.experience}</span></div><div className="professional-bottom"><strong>₹{p.price}<small>/consultation</small></strong><Link to={`/book/${p.id}`} className="primary-btn">Book</Link></div></article>}
+    try {
+      const res = await axios.post(`${API}/auth/login`, {
+        email,
+        password,
+      });
 
-function Professionals(){const [s,setS]=useState("");const [c,setC]=useState("All");const list=demoProfessionals.filter(p=>(c==="All"||p.category===c)&&`${p.name} ${p.category} ${p.location}`.toLowerCase().includes(s.toLowerCase()));return <div className="dashboard-page"><Nav/><main className="dashboard-content"><div className="dashboard-header"><div><span className="eyebrow">PROFESSIONAL DIRECTORY</span><h1>Find your expert.</h1><p>Compare verified professionals by expertise and location.</p></div></div><div className="search-panel"><input value={s} onChange={e=>setS(e.target.value)} placeholder="Search name, category or location..."/><select value={c} onChange={e=>setC(e.target.value)}><option>All</option><option>Architect</option><option>Civil Engineer</option><option>Interior Designer</option></select></div><div className="professional-grid">{list.map(p=><ProfessionalCard key={p.id} p={p}/>)}</div></main></div>}
+      setMessage(res.data.message || "Login successful");
 
-function Booking(){const {id}=useParams();const p=demoProfessionals.find(x=>x.id===Number(id))||demoProfessionals[0];const u=currentUser();const nav=useNavigate();const [f,setF]=useState({date:"",time:"",description:"",budget:""});const submit=e=>{e.preventDefault();if(!u){alert("Please login before booking.");nav("/login");return}const booking={id:Date.now(),professionalId:p.id,professional:p.name,professionalEmail:`${p.name.toLowerCase().replace(/ /g,".")}@sitesetu.demo`,homeowner:u.name,homeownerEmail:u.email,service:p.category,date:f.date,time:f.time,description:f.description,budget:f.budget,status:"Pending",created:new Date().toLocaleDateString()};const bs=get(KEY.bookings,[]);bs.push(booking);save(KEY.bookings,bs);const ns=get(KEY.notes,[]);ns.push({id:Date.now()+1,email:u.email,title:"Booking request sent",message:`Your consultation request was sent to ${p.name}.`,time:new Date().toLocaleString()});save(KEY.notes,ns);alert("Consultation request sent successfully!");nav("/homeowner-dashboard?tab=bookings")};return <div className="auth-page"><div className="auth-card booking-form"><Link to="/professionals" className="auth-logo">← Professionals</Link><div className="professional-avatar big">{p.icon}</div><h1>Book {p.name}</h1><p className="auth-subtitle">{p.category} • {p.location} • ⭐ {p.rating}</p><form onSubmit={submit}><label>Preferred Date</label><input type="date" required value={f.date} onChange={e=>setF({...f,date:e.target.value})}/><label>Preferred Time</label><input type="time" required value={f.time} onChange={e=>setF({...f,time:e.target.value})}/><label>Project Requirements</label><textarea required placeholder="Tell the professional about your project..." value={f.description} onChange={e=>setF({...f,description:e.target.value})}/><label>Budget (optional)</label><input placeholder="e.g. ₹5,00,000" value={f.budget} onChange={e=>setF({...f,budget:e.target.value})}/><button className="auth-button">Request Consultation</button></form></div></div>}
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+      }
 
-function BookingList({bookings,professional,onStatus}){return <div className="booking-list">{bookings.map(b=><div className="booking-item" key={b.id}><div><h3>{professional?b.homeowner:b.professional}</h3><p>{b.service} • {b.date} at {b.time}</p><p>{b.description}</p>{b.budget&&<small>Budget: {b.budget}</small>}</div><div className="booking-actions"><span className={`status ${b.status.toLowerCase()}`}>{b.status}</span>{professional&&b.status==="Pending"&&<><button className="small-btn" onClick={()=>onStatus(b.id,"Accepted")}>Accept</button><button className="small-btn danger" onClick={()=>onStatus(b.id,"Rejected")}>Reject</button></>}</div></div>)}</div>}
-function Projects({homeownerEmail,professionalEmail}){const [items,setItems]=useState(()=>get(KEY.projects,[]).filter(p=>(homeownerEmail&&p.homeownerEmail===homeownerEmail)||(professionalEmail&&p.professionalEmail===professionalEmail)));const [name,setName]=useState("");const add=()=>{if(!name.trim())return;const p={id:Date.now(),name,status:"Planning",progress:10,homeownerEmail,professionalEmail};const all=get(KEY.projects,[]);all.push(p);save(KEY.projects,all);setItems([...items,p]);setName("")};return <section className="dashboard-section-card"><div className="section-row"><div><h2>Projects</h2><p>Track your construction and design projects.</p></div><div className="add-row"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New project name"/><button className="primary-btn" onClick={add}>+ Add Project</button></div></div>{items.length?<div className="project-list">{items.map(p=><div className="project-item" key={p.id}><div><h3>{p.name}</h3><span>{p.status}</span></div><div className="progress"><i style={{width:`${p.progress}%`}}/></div><b>{p.progress}%</b></div>)}</div>:<Empty title="No projects yet" text="Create a project to start tracking progress." icon="📁"/>}</section>}
-function Messages({email}){const [text,setText]=useState("");const [msgs,setMsgs]=useState(()=>get(KEY.messages,[]).filter(m=>m.email===email));const send=()=>{if(!text.trim())return;const m={id:Date.now(),email,text,from:"You",time:new Date().toLocaleTimeString()};const all=get(KEY.messages,[]);all.push(m);save(KEY.messages,all);setMsgs([...msgs,m]);setText("")};return <section className="dashboard-section-card"><h2>Messages</h2><div className="chat-box">{msgs.length?msgs.map(m=><div className="chat-msg" key={m.id}><b>{m.from}</b><p>{m.text}</p><small>{m.time}</small></div>):<Empty title="No messages" text="Your professional conversations will appear here." icon="💬"/>}</div><div className="chat-input"><input value={text} onChange={e=>setText(e.target.value)} placeholder="Write a message..." onKeyDown={e=>e.key==="Enter"&&send()}/><button className="primary-btn" onClick={send}>Send</button></div></section>}
-function Admin(){const [list,setList]=useState(demoProfessionals);const verify=id=>setList(list.map(p=>p.id===id?{...p,verified:true}:p));return <DashboardShell title="Admin Panel"><main className="dashboard-content"><div className="dashboard-header"><div><span className="eyebrow">ADMIN PANEL</span><h1>Verification Dashboard</h1><p>Review professional profiles and platform activity.</p></div></div><div className="dashboard-grid"><Stat icon="👷" n={list.length} t="Professionals"/><Stat icon="✓" n={list.filter(p=>p.verified).length} t="Verified"/><Stat icon="⏳" n={list.filter(p=>!p.verified).length} t="Pending Review"/></div><section className="dashboard-section-card"><h2>Professional Verification</h2><div className="booking-list">{list.map(p=><div className="booking-item" key={p.id}><div><h3>{p.name}</h3><p>{p.category} • {p.location} • {p.experience}</p></div>{p.verified?<span className="status accepted">✓ Verified</span>:<button className="primary-btn" onClick={()=>verify(p.id)}>Verify</button>}</div>)}</div></section></main></DashboardShell>}
-function Stat({icon,n,t}){return <div className="dashboard-card"><span className="dashboard-icon">{icon}</span><strong>{n}</strong><h3>{t}</h3></div>}
-function Field({label,value,onChange,disabled,placeholder}){return <label>{label}<input value={value} onChange={onChange} disabled={disabled} placeholder={placeholder}/></label>}
-function Empty({title,text,icon}){return <div className="empty-state"><div className="empty-section-icon">{icon}</div><h3>{title}</h3><p>{text}</p></div>}
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
+    } catch (err) {
+      setMessage(
+        err.response?.data?.message || "Login failed. Please check your details."
+      );
+    }
+  };
 
-function App(){return <Routes><Route path="/" element={<Home/>}/><Route path="/login" element={<Auth/>}/><Route path="/register" element={<Auth register/>}/><Route path="/professionals" element={<Professionals/>}/><Route path="/book/:id" element={<Booking/>}/><Route path="/professional-dashboard" element={<ProfessionalDashboard/>}/><Route path="/homeowner-dashboard" element={<HomeownerDashboard/>}/><Route path="/dashboard" element={<HomeownerDashboard/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes>}
+  return (
+    <div>
+      <h1>Login</h1>
+
+      <form onSubmit={handleLogin}>
+        <div>
+          <label>Email</label>
+          <br />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <br />
+
+        <div>
+          <label>Password</label>
+          <br />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <br />
+
+        <button type="submit">Login</button>
+      </form>
+
+      {message && <p>{message}</p>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <nav>
+        <Link to="/">Home</Link> |{" "}
+        <Link to="/login">Login</Link>
+      </nav>
+
+      <hr />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </>
+  );
+}
+
 export default App;
