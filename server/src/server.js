@@ -1,9 +1,12 @@
 import dns from "dns";
 
-dns.setServers(["8.8.8.8"]);
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 
@@ -12,11 +15,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Root route
+// Home route
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "SiteSetu backend is live!"
+    message: "SiteSetu backend is live"
   });
 });
 
