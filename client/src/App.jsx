@@ -1,199 +1,14 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import {
   Link,
   Routes,
   Route,
   useNavigate,
-  useParams,
-  useSearchParams,
+  useLocation
 } from "react-router-dom";
 import axios from "axios";
 
-const API = "https://sitesetu.onrender.com/api";
-
-const KEY = {
-  user: "sitesetuUser",
-  bookings: "sitesetuBookings",
-  projects: "sitesetuProjects",
-  messages: "sitesetuMessages",
-  notes: "sitesetuNotifications",
-  profiles: "sitesetuProfiles",
-};
-
-const demoProfessionals = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    category: "Architect",
-    location: "Udaipur",
-    experience: "8 Years",
-    rating: "4.9",
-    projects: "120+",
-    price: 1500,
-    icon: "🏛️",
-    verified: true,
-    about:
-      "Residential architect specialising in modern homes, planning and 3D design.",
-  },
-  {
-    id: 2,
-    name: "Amit Verma",
-    category: "Civil Engineer",
-    location: "Jaipur",
-    experience: "10 Years",
-    rating: "4.8",
-    projects: "180+",
-    price: 1800,
-    icon: "🏗️",
-    verified: true,
-    about:
-      "Civil and structural consultant for residential construction and estimation.",
-  },
-  {
-    id: 3,
-    name: "Priya Mehta",
-    category: "Interior Designer",
-    location: "Delhi",
-    experience: "6 Years",
-    rating: "4.9",
-    projects: "90+",
-    price: 1200,
-    icon: "🛋️",
-    verified: true,
-    about:
-      "Interior designer focused on functional, premium and budget-friendly spaces.",
-  },
-  {
-    id: 4,
-    name: "Vikram Singh",
-    category: "Architect",
-    location: "Jaipur",
-    experience: "7 Years",
-    rating: "4.7",
-    projects: "75+",
-    price: 1400,
-    icon: "🏛️",
-    verified: true,
-    about:
-      "Contemporary residential architect with end-to-end design support.",
-  },
-  {
-    id: 5,
-    name: "Neha Gupta",
-    category: "Interior Designer",
-    location: "Udaipur",
-    experience: "5 Years",
-    rating: "4.8",
-    projects: "65+",
-    price: 1100,
-    icon: "🛋️",
-    verified: true,
-    about:
-      "Home interiors, modular kitchens, furniture layouts and styling.",
-  },
-  {
-    id: 6,
-    name: "Rakesh Patel",
-    category: "Civil Engineer",
-    location: "Delhi",
-    experience: "9 Years",
-    rating: "4.8",
-    projects: "140+",
-    price: 1600,
-    icon: "🏗️",
-    verified: true,
-    about:
-      "Construction supervision, BOQ, estimation and structural coordination.",
-  },
-];
-
-const serviceData = {
-  Architect: {
-    icon: "🏛️",
-    title: "Architect Consultation",
-    description:
-      "Planning, design and residential consultation.",
-    longDescription:
-      "Connect with experienced architects for residential planning, floor plans, elevations, 3D concepts and complete design guidance for your project.",
-  },
-  "Civil Engineer": {
-    icon: "🏗️",
-    title: "Civil Engineering Inspection",
-    description:
-      "Construction quality and site inspection support.",
-    longDescription:
-      "Get professional civil engineering support for construction supervision, structural guidance, estimation, BOQ and quality inspection.",
-  },
-  "Interior Designer": {
-    icon: "🛋️",
-    title: "Interior Design Consultation",
-    description:
-      "Interior planning, finishing and design guidance.",
-    longDescription:
-      "Find interior designers for home interiors, furniture layouts, modular kitchens, materials, finishing and complete styling guidance.",
-  },
-};
-
-function get(key, fallback = []) {
-  try {
-    return JSON.parse(
-      localStorage.getItem(key) || JSON.stringify(fallback)
-    );
-  } catch {
-    return fallback;
-  }
-}
-
-function save(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function currentUser() {
-  return get(KEY.user, null);
-}
-
-/* =========================
-   NAVBAR
-========================= */
-
-function Nav() {
-  const user = currentUser();
-
-  return (
-    <nav className="navbar">
-      <Link className="brand" to="/">
-        <span className="logo-icon">S</span>
-        SiteSetu
-      </Link>
-
-      <div className="navlinks">
-        <Link to="/#services">Services</Link>
-        <Link to="/#how">How It Works</Link>
-
-        {user ? (
-          <Link
-            className="login-btn"
-            to={
-              user.role === "Professional"
-                ? "/professional-dashboard"
-                : "/homeowner-dashboard"
-            }
-          >
-            Dashboard
-          </Link>
-        ) : (
-          <Link className="login-btn" to="/login">
-            Login
-          </Link>
-        )}
-
-        <Link className="primary-btn" to="/register">
-          Get Started
-        </Link>
-      </div>
-    </nav>
-  );
-}
+const API = "http://localhost:5000/api";
 
 /* =========================
    HOME
@@ -201,157 +16,182 @@ function Nav() {
 
 function Home() {
   const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     axios
       .get(`${API}/services`)
       .then((res) => {
-        if (Array.isArray(res.data)) {
+        if (Array.isArray(res.data) && res.data.length > 0) {
           setServices(res.data);
+        } else {
+          setDefaultServices();
         }
       })
       .catch(() => {
-        // Demo services are used below
-      })
-      .finally(() => {
-        setLoading(false);
+        setDefaultServices();
       });
   }, []);
 
-  const serviceCards =
-    services.length > 0
-      ? services.map((service) => ({
-          category: service.category,
-          title: service.title,
-          description: service.description,
-          icon:
-            service.category === "Architect"
-              ? "🏛️"
-              : service.category === "Civil Engineer"
-              ? "🏗️"
-              : "🛋️",
-        }))
-      : [
-          {
-            category: "Architect",
-            title: "Architect Consultation",
-            description:
-              "Planning, design and residential consultation.",
-            icon: "🏛️",
-          },
-          {
-            category: "Civil Engineer",
-            title: "Civil Engineering Inspection",
-            description:
-              "Construction quality and site inspection support.",
-            icon: "🏗️",
-          },
-          {
-            category: "Interior Designer",
-            title: "Interior Design Consultation",
-            description:
-              "Interior planning, finishing and design guidance.",
-            icon: "🛋️",
-          },
-        ];
+  const setDefaultServices = () => {
+    setServices([
+      {
+        id: 1,
+        title: "Architect Consultation",
+        category: "Architect",
+        description:
+          "Planning, design and residential consultation."
+      },
+      {
+        id: 2,
+        title: "Civil Engineering Inspection",
+        category: "Civil Engineer",
+        description:
+          "Construction quality and site inspection support."
+      },
+      {
+        id: 3,
+        title: "Interior Design Consultation",
+        category: "Interior Designer",
+        description:
+          "Interior planning, finishing and design guidance."
+      }
+    ]);
+  };
 
   return (
-    <div>
-      <Nav />
+    <div className="app">
+      <nav className="navbar">
+        <div className="nav-container">
+          <Link className="brand" to="/">
+            <span className="logo-icon">S</span>
+            SiteSetu
+          </Link>
 
-      {/* HERO */}
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="eyebrow">
-            YOUR CONSTRUCTION COMPANION
-          </span>
+          <div className="navlinks">
+            <Link to="/">Home</Link>
+            <a href="/#services">Services</a>
+            <a href="/#how">How It Works</a>
+            <a href="/#about">About</a>
 
-          <h1>
-            Build with confidence.
-            <br />
-            <span>Find the right expert.</span>
-          </h1>
-
-          <p>
-            Connect with verified architects, civil engineers and
-            interior designers for your residential construction
-            project.
-          </p>
-
-          <div className="hero-actions">
-            <Link
-              to="/professionals"
-              className="primary-btn large"
-            >
-              Find a Professional →
+            <Link to="/login" className="login-btn">
+              Login
             </Link>
-
-            <a
-              href="#how"
-              className="secondary-btn large"
-            >
-              How it works
-            </a>
           </div>
         </div>
+      </nav>
 
-        <div className="hero-card">
-          <div className="card-top">
-            <span className="status-dot"></span>
-            Trusted professionals
-          </div>
+      <main>
+        {/* HERO */}
+        <section className="hero">
+          <div className="hero-copy">
+            <span className="eyebrow">
+              YOUR CONSTRUCTION COMPANION
+            </span>
 
-          <div className="metric">3+</div>
+            <h1>
+              Build with confidence.
+              <br />
+              <span>Find the right expert.</span>
+            </h1>
 
-          <div className="muted">
-            Professional categories
-          </div>
+            <p>
+              Connect with verified architects, civil engineers and
+              interior designers for your residential construction
+              project.
+            </p>
 
-          <div className="mini-grid">
-            <div>
-              🏛️ <b>Architects</b>
-            </div>
-
-            <div>
-              🏗️ <b>Civil Engineers</b>
-            </div>
-
-            <div>
-              🛋️ <b>Interior Designers</b>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SERVICES */}
-      <section id="services" className="section">
-        <div className="section-heading">
-          <span className="eyebrow">SERVICES</span>
-
-          <h2>
-            Everything for your next project.
-          </h2>
-
-          <p>
-            From concept to construction, find the right
-            professional and manage consultations in one place.
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="loading">
-            Loading services...
-          </div>
-        ) : (
-          <div className="service-grid">
-            {serviceCards.map((service) => (
-              <article
-                className="service-card"
-                key={service.category}
+            <div className="hero-actions">
+              <Link
+                to="/professionals"
+                className="primary-btn large"
               >
-                <div className="icon">
-                  {service.icon}
+                Find a Professional →
+              </Link>
+
+              <a
+                href="/#how"
+                className="secondary-btn large"
+              >
+                How It Works
+              </a>
+            </div>
+
+            <div className="hero-stats">
+              <div>
+                <strong>100+</strong>
+                <span>Professionals</span>
+              </div>
+
+              <div>
+                <strong>500+</strong>
+                <span>Projects</span>
+              </div>
+
+              <div>
+                <strong>4.8★</strong>
+                <span>Average Rating</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="hero-card">
+            <div className="hero-card-icon">🏠</div>
+
+            <h2>Start Your Project</h2>
+
+            <p>
+              Get connected with the right professional for your
+              project.
+            </p>
+
+            <div className="hero-feature">
+              <span>👷</span>
+              <div>
+                <strong>Verified Experts</strong>
+                <small>Professionals you can trust</small>
+              </div>
+            </div>
+
+            <div className="hero-feature">
+              <span>📍</span>
+              <div>
+                <strong>Local Professionals</strong>
+                <small>Find experts near you</small>
+              </div>
+            </div>
+
+            <div className="hero-feature">
+              <span>⭐</span>
+              <div>
+                <strong>Quality Services</strong>
+                <small>Rated by customers</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SERVICES */}
+        <section id="services" className="section">
+          <div className="section-heading">
+            <span className="eyebrow">OUR SERVICES</span>
+
+            <h2>Find the Right Professional</h2>
+
+            <p>
+              Whatever your construction requirement, SiteSetu helps
+              you connect with the right expert.
+            </p>
+          </div>
+
+          <div className="service-grid">
+            {services.map((service) => (
+              <div className="service-card" key={service.id}>
+                <div className="service-icon">
+                  {service.category === "Architect"
+                    ? "📐"
+                    : service.category === "Civil Engineer"
+                    ? "🏗️"
+                    : "🎨"}
                 </div>
 
                 <span className="service-category">
@@ -362,326 +202,173 @@ function Home() {
 
                 <p>{service.description}</p>
 
-                {/* IMPORTANT: SERVICE PAGE */}
+                {/* CATEGORY-WISE NAVIGATION */}
                 <Link
-                  to={`/service/${encodeURIComponent(
+                  to={`/professionals?category=${encodeURIComponent(
                     service.category
                   )}`}
-                  className="primary-btn"
+                  className="service-btn"
                 >
                   View Professionals →
                 </Link>
-              </article>
+              </div>
             ))}
           </div>
-        )}
-      </section>
+        </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how" className="section process">
-        <div className="section-heading">
-          <span className="eyebrow">
-            HOW IT WORKS
-          </span>
+        {/* HOW IT WORKS */}
+        <section id="how" className="section process">
+          <div className="section-heading">
+            <span className="eyebrow">SIMPLE PROCESS</span>
 
-          <h2>
-            Simple from start to finish.
-          </h2>
-        </div>
+            <h2>How SiteSetu Works</h2>
 
-        <div className="steps">
-          {[
-            [
-              "01",
-              "Create your account",
-              "Register as a homeowner or professional.",
-            ],
-            [
-              "02",
-              "Find a professional",
-              "Search by category, name or location.",
-            ],
-            [
-              "03",
-              "Book a consultation",
-              "Send your requirements and track the request.",
-            ],
-          ].map((step) => (
-            <div key={step[0]}>
-              <span>{step[0]}</span>
-              <h3>{step[1]}</h3>
-              <p>{step[2]}</p>
+            <p>Finding the right professional is simple.</p>
+          </div>
+
+          <div className="steps">
+            <div className="step">
+              <div className="step-number">01</div>
+              <div className="step-icon">🔍</div>
+              <h3>Search</h3>
+              <p>
+                Select the type of professional you need.
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* FOOTER */}
+            <div className="step">
+              <div className="step-number">02</div>
+              <div className="step-icon">👷</div>
+              <h3>Choose</h3>
+              <p>
+                Compare professionals based on experience and rating.
+              </p>
+            </div>
+
+            <div className="step">
+              <div className="step-number">03</div>
+              <div className="step-icon">🤝</div>
+              <h3>Connect</h3>
+              <p>
+                Discuss your project requirements.
+              </p>
+            </div>
+
+            <div className="step">
+              <div className="step-number">04</div>
+              <div className="step-icon">🏠</div>
+              <h3>Build</h3>
+              <p>
+                Start your project with confidence.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ABOUT */}
+        <section id="about" className="section about-section">
+          <div className="section-heading">
+            <span className="eyebrow">ABOUT SITESETU</span>
+
+            <h2>Making Construction Simple & Reliable</h2>
+
+            <p>
+              SiteSetu connects homeowners with trusted construction
+              professionals. Whether you are building a new home,
+              renovating an existing property or designing an
+              interior, we help you find the right expert.
+            </p>
+          </div>
+        </section>
+      </main>
+
       <footer>
-        <b>SiteSetu</b>
+        <div className="footer-container">
+          <div>
+            <Link to="/" className="footer-logo">
+              <span className="logo-icon">S</span>
+              SiteSetu
+            </Link>
 
-        <span>
-          Connecting homeowners with construction & design
-          professionals.
-        </span>
+            <p>
+              Connecting homeowners with trusted construction and
+              design professionals.
+            </p>
+          </div>
+
+          <div className="footer-links">
+            <h4>Quick Links</h4>
+            <Link to="/">Home</Link>
+            <Link to="/professionals">Professionals</Link>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Register</Link>
+          </div>
+
+          <div className="footer-links">
+            <h4>Services</h4>
+
+            <Link to="/professionals?category=Architect">
+              Architect
+            </Link>
+
+            <Link to="/professionals?category=Civil%20Engineer">
+              Civil Engineer
+            </Link>
+
+            <Link to="/professionals?category=Interior%20Designer">
+              Interior Designer
+            </Link>
+          </div>
+        </div>
+
+        <div className="copyright">
+          © 2026 SiteSetu. All rights reserved.
+        </div>
       </footer>
     </div>
   );
 }
 
 /* =========================
-   SERVICE DETAILS PAGE
+   LOGIN
 ========================= */
 
-function ServiceDetails() {
-  const { category } = useParams();
+function Login() {
+  const navigate = useNavigate();
 
-  const serviceCategory = decodeURIComponent(category || "");
-
-  const service =
-    serviceData[serviceCategory] ||
-    serviceData.Architect;
-
-  return (
-    <div className="dashboard-page">
-      <Nav />
-
-      <main className="dashboard-content">
-        <div className="dashboard-header">
-          <div>
-            <span className="eyebrow">
-              SERVICE
-            </span>
-
-            <h1>
-              {service.icon} {service.title}
-            </h1>
-
-            <p>
-              {service.description}
-            </p>
-          </div>
-        </div>
-
-        <section className="dashboard-section-card">
-          <div
-            style={{
-              fontSize: "64px",
-              marginBottom: "15px",
-            }}
-          >
-            {service.icon}
-          </div>
-
-          <h2>
-            {service.title}
-          </h2>
-
-          <p
-            style={{
-              maxWidth: "750px",
-              lineHeight: "1.8",
-              fontSize: "17px",
-            }}
-          >
-            {service.longDescription}
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              gap: "15px",
-              marginTop: "25px",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* NOW GO TO FILTERED PROFESSIONALS */}
-            <Link
-              to={`/professionals?category=${encodeURIComponent(
-                serviceCategory
-              )}`}
-              className="primary-btn"
-            >
-              View {serviceCategory}s →
-            </Link>
-
-            <Link
-              to="/services"
-              className="secondary-btn"
-            >
-              All Services
-            </Link>
-          </div>
-        </section>
-
-        <section className="dashboard-section-card">
-          <h2>
-            What you can get
-          </h2>
-
-          <div className="steps">
-            {serviceCategory === "Architect" && (
-              <>
-                <div>
-                  <span>01</span>
-                  <h3>Planning</h3>
-                  <p>
-                    Residential planning and floor plan
-                    guidance.
-                  </p>
-                </div>
-
-                <div>
-                  <span>02</span>
-                  <h3>Design</h3>
-                  <p>
-                    Elevations, concepts and 3D design
-                    support.
-                  </p>
-                </div>
-
-                <div>
-                  <span>03</span>
-                  <h3>Consultation</h3>
-                  <p>
-                    Discuss your project requirements with
-                    an architect.
-                  </p>
-                </div>
-              </>
-            )}
-
-            {serviceCategory === "Civil Engineer" && (
-              <>
-                <div>
-                  <span>01</span>
-                  <h3>Site Inspection</h3>
-                  <p>
-                    Construction quality and site
-                    inspection support.
-                  </p>
-                </div>
-
-                <div>
-                  <span>02</span>
-                  <h3>Estimation</h3>
-                  <p>
-                    BOQ, estimation and construction
-                    guidance.
-                  </p>
-                </div>
-
-                <div>
-                  <span>03</span>
-                  <h3>Supervision</h3>
-                  <p>
-                    Professional construction supervision
-                    support.
-                  </p>
-                </div>
-              </>
-            )}
-
-            {serviceCategory === "Interior Designer" && (
-              <>
-                <div>
-                  <span>01</span>
-                  <h3>Interior Planning</h3>
-                  <p>
-                    Functional room layouts and planning.
-                  </p>
-                </div>
-
-                <div>
-                  <span>02</span>
-                  <h3>Materials</h3>
-                  <p>
-                    Material, furniture and finishing
-                    guidance.
-                  </p>
-                </div>
-
-                <div>
-                  <span>03</span>
-                  <h3>Styling</h3>
-                  <p>
-                    Complete interior styling and design
-                    support.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
-}
-
-/* =========================
-   AUTH
-========================= */
-
-function Auth({ register = false }) {
-  const nav = useNavigate();
-
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "Homeowner",
-  });
-
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!email || !password) {
+      alert("Please enter email and password.");
+      return;
+    }
 
     try {
-      const response = await axios.post(
-        `${API}/auth/${register ? "register" : "login"}`,
-        form
-      );
+      setLoading(true);
 
-      if (!response.data.success) {
-        throw new Error(
-          response.data.message || "Request failed"
-        );
-      }
+      const res = await axios.post(`${API}/auth/login`, {
+        email,
+        password
+      });
 
-      if (response.data.user) {
-        save(KEY.user, response.data.user);
-      }
-
-      if (response.data.token) {
+      if (res.data.success) {
         localStorage.setItem(
-          "token",
-          response.data.token
+          "sitesetuUser",
+          JSON.stringify(res.data.user)
         );
-      }
 
-      alert(
-        register
-          ? "Registration successful!"
-          : "Login successful!"
-      );
-
-      const role =
-        response.data.user?.role || form.role;
-
-      if (role === "Professional") {
-        nav("/professional-dashboard");
-      } else if (role === "Admin") {
-        nav("/admin");
-      } else {
-        nav("/homeowner-dashboard");
+        alert("Login successful!");
+        navigate("/dashboard");
       }
     } catch (error) {
       alert(
         error.response?.data?.message ||
-          error.message ||
-          "Request failed. Check backend."
+          "Login failed. Please check your email and password."
       );
     } finally {
       setLoading(false);
@@ -696,135 +383,45 @@ function Auth({ register = false }) {
           SiteSetu
         </Link>
 
-        <h1>
-          {register
-            ? "Create Account"
-            : "Welcome Back"}
-        </h1>
+        <h1>Welcome Back</h1>
 
         <p className="auth-subtitle">
-          {register
-            ? "Create your account to get started."
-            : "Login to continue to your SiteSetu account."}
+          Login to continue to your SiteSetu account.
         </p>
 
-        <form onSubmit={submit}>
-          {register && (
-            <>
-              <label>Full Name</label>
-
-              <input
-                required
-                placeholder="Enter your name"
-                value={form.name}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    name: e.target.value,
-                  })
-                }
-              />
-            </>
-          )}
-
+        <form onSubmit={handleLogin}>
           <label>Email Address</label>
 
           <input
-            required
             type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                email: e.target.value,
-              })
-            }
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
 
           <label>Password</label>
 
           <input
-            required
-            minLength="6"
             type="password"
-            placeholder="Minimum 6 characters"
-            value={form.password}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                password: e.target.value,
-              })
-            }
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           />
 
-          {register && (
-            <>
-              <label>Account Type</label>
-
-              <div className="role-grid">
-                <button
-                  type="button"
-                  className={`role ${
-                    form.role === "Homeowner"
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      role: "Homeowner",
-                    })
-                  }
-                >
-                  🏠
-                  <strong>Homeowner</strong>
-                  <small>Find professionals</small>
-                </button>
-
-                <button
-                  type="button"
-                  className={`role ${
-                    form.role === "Professional"
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      role: "Professional",
-                    })
-                  }
-                >
-                  👷
-                  <strong>Professional</strong>
-                  <small>Offer your services</small>
-                </button>
-              </div>
-            </>
-          )}
-
           <button
+            type="submit"
             className="auth-button"
             disabled={loading}
           >
-            {loading
-              ? "Please wait..."
-              : register
-              ? "Create Account"
-              : "Login"}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         <p className="auth-bottom">
-          {register
-            ? "Already have an account?"
-            : "Don't have an account?"}{" "}
-          <Link
-            to={register ? "/login" : "/register"}
-          >
-            {register ? "Login" : "Create Account"}
-          </Link>
+          Don't have an account?{" "}
+          <Link to="/register">Create Account</Link>
         </p>
       </div>
     </div>
@@ -832,128 +429,603 @@ function Auth({ register = false }) {
 }
 
 /* =========================
-   PROFESSIONAL DIRECTORY
+   REGISTER
 ========================= */
 
-function Professionals() {
-  const [searchParams, setSearchParams] =
-    useSearchParams();
+function Register() {
+  const navigate = useNavigate();
 
-  const initialCategory =
-    searchParams.get("category") || "All";
+  const [role, setRole] = useState("Homeowner");
 
-  const [search, setSearch] = useState(
-    searchParams.get("search") || ""
-  );
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: ""
+  });
 
-  const [category, setCategory] =
-    useState(initialCategory);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = useMemo(() => {
-    return demoProfessionals.filter(
-      (professional) =>
-        (category === "All" ||
-          professional.category === category) &&
-        `${professional.name} ${professional.category} ${professional.location}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
-    );
-  }, [search, category]);
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
 
-  const changeCategory = (value) => {
-    setCategory(value);
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
-    if (value === "All") {
-      setSearchParams({});
-    } else {
-      setSearchParams({
-        category: value,
+    if (!form.name || !form.email || !form.password) {
+      alert("Please fill all fields.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(`${API}/auth/register`, {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role
       });
+
+      if (res.data.success) {
+        alert("Registration successful!");
+        navigate("/login");
+      }
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+          "Registration failed."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="dashboard-page">
-      <Nav />
+    <div className="auth-page">
+      <div className="auth-card register-card">
+        <Link to="/" className="auth-logo">
+          <span className="logo-icon">S</span>
+          SiteSetu
+        </Link>
 
-      <main className="dashboard-content">
+        <h1>Create Account</h1>
+
+        <p className="auth-subtitle">
+          Join SiteSetu and get started with your project.
+        </p>
+
+        <form onSubmit={handleRegister}>
+          <label>Full Name</label>
+
+          <input
+            type="text"
+            name="name"
+            placeholder="Enter your full name"
+            value={form.name}
+            onChange={handleChange}
+            required
+          />
+
+          <label>Email Address</label>
+
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+
+          <label>Password</label>
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Create a password"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+
+          <label>Select Account Type</label>
+
+          <div className="role-grid">
+            <button
+              type="button"
+              className={
+                role === "Homeowner"
+                  ? "role active"
+                  : "role"
+              }
+              onClick={() => setRole("Homeowner")}
+            >
+              🏠
+              <strong>Homeowner</strong>
+              <small>Find professionals</small>
+            </button>
+
+            <button
+              type="button"
+              className={
+                role === "Professional"
+                  ? "role active"
+                  : "role"
+              }
+              onClick={() => setRole("Professional")}
+            >
+              👷
+              <strong>Professional</strong>
+              <small>Offer your services</small>
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            className="auth-button"
+            disabled={loading}
+          >
+            {loading ? "Creating..." : "Create Account"}
+          </button>
+        </form>
+
+        <p className="auth-bottom">
+          Already have an account?{" "}
+          <Link to="/login">Login</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================
+   DASHBOARD
+========================= */
+
+function Dashboard() {
+  const navigate = useNavigate();
+
+  const user = JSON.parse(
+    localStorage.getItem("sitesetuUser") || "null"
+  );
+
+  const [bookings] = useState(() => {
+    return JSON.parse(
+      localStorage.getItem("sitesetuBookings") || "[]"
+    );
+  });
+
+  if (!user) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <h1>Please Login</h1>
+
+          <p>
+            You need to login to access your dashboard.
+          </p>
+
+          <Link to="/login" className="primary-btn">
+            Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const logout = () => {
+    localStorage.removeItem("sitesetuUser");
+    navigate("/");
+  };
+
+  const myBookings = bookings.filter(
+    (booking) => booking.email === user.email
+  );
+
+  return (
+    <div className="dashboard-page">
+      <nav className="dashboard-nav">
+        <Link to="/" className="brand">
+          <span className="logo-icon">S</span>
+          SiteSetu
+        </Link>
+
+        <div>
+          <span className="dashboard-user">
+            {user.name}
+          </span>
+
+          <button
+            className="logout-btn"
+            onClick={logout}
+          >
+            Logout
+          </button>
+        </div>
+      </nav>
+
+      <main className="dashboard-container">
+        <div className="dashboard-header">
+          <div>
+            <span className="eyebrow">DASHBOARD</span>
+
+            <h1>Welcome, {user.name}</h1>
+
+            <p>
+              Manage your SiteSetu activities from one place.
+            </p>
+          </div>
+
+          <Link
+            to="/professionals"
+            className="primary-btn"
+          >
+            Find Professionals
+          </Link>
+        </div>
+
+        <div className="dashboard-grid">
+          <div className="dashboard-card">
+            <span className="dashboard-icon">👤</span>
+            <h3>Account Type</h3>
+            <strong>{user.role}</strong>
+          </div>
+
+          <div className="dashboard-card">
+            <span className="dashboard-icon">📅</span>
+            <h3>Bookings</h3>
+            <strong>{myBookings.length}</strong>
+          </div>
+
+          <div className="dashboard-card">
+            <span className="dashboard-icon">🔔</span>
+            <h3>Notifications</h3>
+            <strong>3</strong>
+          </div>
+        </div>
+
+        <section className="dashboard-section">
+          <div className="section-heading">
+            <span className="eyebrow">
+              RECENT ACTIVITY
+            </span>
+
+            <h2>Your Consultation Requests</h2>
+          </div>
+
+          {myBookings.length === 0 ? (
+            <div className="empty-state">
+              <h3>No bookings yet</h3>
+
+              <p>
+                Find a professional and request your first
+                consultation.
+              </p>
+
+              <Link
+                to="/professionals"
+                className="primary-btn"
+              >
+                Browse Professionals
+              </Link>
+            </div>
+          ) : (
+            <div className="booking-list">
+              {myBookings.map((booking) => (
+                <div
+                  className="booking-card"
+                  key={booking.id}
+                >
+                  <div>
+                    <h3>{booking.professional}</h3>
+
+                    <p>{booking.service}</p>
+
+                    <small>
+                      {booking.date} at {booking.time}
+                    </small>
+                  </div>
+
+                  <span className="status pending">
+                    {booking.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+/* =========================
+   PROFESSIONAL DATA
+========================= */
+
+const professionals = [
+  {
+    id: 1,
+    name: "Rahul Sharma",
+    category: "Architect",
+    location: "Udaipur",
+    experience: 8,
+    rating: 4.8,
+    price: 700,
+    verified: true,
+    description:
+      "Residential architect specializing in modern home planning and design."
+  },
+  {
+    id: 2,
+    name: "Amit Verma",
+    category: "Civil Engineer",
+    location: "Jaipur",
+    experience: 10,
+    rating: 4.9,
+    price: 900,
+    verified: true,
+    description:
+      "Civil engineering consultant specializing in construction inspection."
+  },
+  {
+    id: 3,
+    name: "Priya Mehta",
+    category: "Interior Designer",
+    location: "Udaipur",
+    experience: 6,
+    rating: 4.7,
+    price: 600,
+    verified: true,
+    description:
+      "Interior designer focused on practical and modern residential spaces."
+  },
+  {
+    id: 4,
+    name: "Vikas Singh",
+    category: "Architect",
+    location: "Delhi",
+    experience: 12,
+    rating: 4.6,
+    price: 1000,
+    verified: false,
+    description:
+      "Architect providing residential planning and renovation guidance."
+  },
+  {
+    id: 5,
+    name: "Neha Gupta",
+    category: "Civil Engineer",
+    location: "Udaipur",
+    experience: 7,
+    rating: 4.8,
+    price: 800,
+    verified: true,
+    description:
+      "Civil engineer providing structural inspection and construction guidance."
+  },
+  {
+    id: 6,
+    name: "Kavita Joshi",
+    category: "Interior Designer",
+    location: "Jaipur",
+    experience: 9,
+    rating: 4.9,
+    price: 750,
+    verified: true,
+    description:
+      "Interior designer specializing in modern residential interiors."
+  }
+];
+
+/* =========================
+   PROFESSIONALS
+========================= */
+
+function Professionals() {
+  const location = useLocation();
+
+  const params = new URLSearchParams(location.search);
+
+  const categoryFromUrl = params.get("category");
+
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState(
+    categoryFromUrl || "All"
+  );
+  const [professionalLocation, setProfessionalLocation] =
+    useState("All");
+
+  useEffect(() => {
+    if (
+      categoryFromUrl &&
+      [
+        "Architect",
+        "Civil Engineer",
+        "Interior Designer"
+      ].includes(categoryFromUrl)
+    ) {
+      setCategory(categoryFromUrl);
+    }
+  }, [categoryFromUrl]);
+
+  const filteredProfessionals = useMemo(() => {
+    return professionals.filter((professional) => {
+      const searchText = search.toLowerCase();
+
+      const matchesSearch =
+        professional.name
+          .toLowerCase()
+          .includes(searchText) ||
+        professional.category
+          .toLowerCase()
+          .includes(searchText) ||
+        professional.location
+          .toLowerCase()
+          .includes(searchText);
+
+      const matchesCategory =
+        category === "All" ||
+        professional.category === category;
+
+      const matchesLocation =
+        professionalLocation === "All" ||
+        professional.location === professionalLocation;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesLocation
+      );
+    });
+  }, [search, category, professionalLocation]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategory("All");
+    setProfessionalLocation("All");
+  };
+
+  return (
+    <div className="dashboard-page">
+      <nav className="dashboard-nav">
+        <Link to="/" className="brand">
+          <span className="logo-icon">S</span>
+          SiteSetu
+        </Link>
+
+        <div>
+          <Link
+            to="/dashboard"
+            className="login-btn"
+          >
+            Dashboard
+          </Link>
+
+          <Link
+            to="/register"
+            className="primary-btn"
+          >
+            Register
+          </Link>
+        </div>
+      </nav>
+
+      <main className="dashboard-container">
         <div className="dashboard-header">
           <div>
             <span className="eyebrow">
               PROFESSIONAL DIRECTORY
             </span>
 
-            <h1>
-              {category === "All"
-                ? "Find your expert."
-                : `Find a ${category}.`}
-            </h1>
+            <h1>Find the right professional</h1>
 
             <p>
-              Compare verified professionals by
-              expertise and location.
+              Search verified experts by category and
+              location.
             </p>
           </div>
         </div>
 
-        {/* SEARCH */}
-        <div className="search-panel">
+        {/* ACTIVE CATEGORY */}
+        {category !== "All" && (
+          <div className="active-filter">
+            Showing professionals for:
+            <strong>{category}</strong>
+
+            <button onClick={clearFilters}>
+              Clear
+            </button>
+          </div>
+        )}
+
+        <div className="filter-bar">
           <input
+            type="text"
+            placeholder="Search by name, category or location..."
             value={search}
             onChange={(e) =>
               setSearch(e.target.value)
             }
-            placeholder="Search name, category or location..."
           />
 
           <select
             value={category}
             onChange={(e) =>
-              changeCategory(e.target.value)
+              setCategory(e.target.value)
             }
           >
-            <option>All</option>
-            <option>Architect</option>
-            <option>Civil Engineer</option>
-            <option>Interior Designer</option>
+            <option value="All">
+              All Categories
+            </option>
+
+            <option value="Architect">
+              Architect
+            </option>
+
+            <option value="Civil Engineer">
+              Civil Engineer
+            </option>
+
+            <option value="Interior Designer">
+              Interior Designer
+            </option>
+          </select>
+
+          <select
+            value={professionalLocation}
+            onChange={(e) =>
+              setProfessionalLocation(e.target.value)
+            }
+          >
+            <option value="All">
+              All Locations
+            </option>
+
+            <option value="Udaipur">
+              Udaipur
+            </option>
+
+            <option value="Jaipur">
+              Jaipur
+            </option>
+
+            <option value="Delhi">
+              Delhi
+            </option>
           </select>
         </div>
 
-        {/* CATEGORY TITLE */}
-        {category !== "All" && (
-          <section
-            className="dashboard-section-card"
-            style={{
-              marginBottom: "25px",
-            }}
-          >
-            <h2>
-              {serviceData[category]?.icon}{" "}
-              {serviceData[category]?.title}
-            </h2>
-
-            <p>
-              {serviceData[category]?.description}
-            </p>
-          </section>
-        )}
-
-        {/* PROFESSIONALS */}
         <div className="professional-grid">
-          {filtered.map((professional) => (
-            <ProfessionalCard
-              key={professional.id}
-              p={professional}
-            />
-          ))}
+          {filteredProfessionals.map(
+            (professional) => (
+              <ProfessionalCard
+                key={professional.id}
+                professional={professional}
+              />
+            )
+          )}
         </div>
 
-        {!filtered.length && (
-          <Empty
-            title="No professionals found"
-            text="Try another search or category."
-            icon="🔍"
-          />
+        {filteredProfessionals.length === 0 && (
+          <div className="empty-state">
+            <h3>No professionals found</h3>
+
+            <p>
+              Try changing your search or filters.
+            </p>
+
+            <button
+              className="primary-btn"
+              onClick={clearFilters}
+            >
+              Show All Professionals
+            </button>
+          </div>
         )}
       </main>
     </div>
@@ -964,49 +1036,53 @@ function Professionals() {
    PROFESSIONAL CARD
 ========================= */
 
-function ProfessionalCard({ p }) {
+function ProfessionalCard({ professional }) {
   return (
-    <article className="professional-card">
+    <div className="professional-card">
       <div className="professional-top">
         <div className="professional-avatar">
-          {p.icon}
+          {professional.name.charAt(0)}
         </div>
 
-        {p.verified && (
+        {professional.verified && (
           <span className="verified">
             ✓ Verified
           </span>
         )}
       </div>
 
-      <h2>{p.name}</h2>
+      <h2>{professional.name}</h2>
 
       <p className="professional-category">
-        {p.category}
+        {professional.category}
       </p>
 
-      <p>{p.about}</p>
+      <p>{professional.description}</p>
 
       <div className="professional-details">
-        <span>📍 {p.location}</span>
-        <span>⭐ {p.rating}</span>
-        <span>💼 {p.experience}</span>
+        <span>📍 {professional.location}</span>
+
+        <span>⭐ {professional.rating}</span>
+
+        <span>
+          💼 {professional.experience} years
+        </span>
       </div>
 
       <div className="professional-bottom">
         <strong>
-          ₹{p.price}
+          ₹{professional.price}
           <small>/consultation</small>
         </strong>
 
         <Link
-          to={`/book/${p.id}`}
+          to={`/book/${professional.id}`}
           className="primary-btn"
         >
           Book
         </Link>
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -1015,175 +1091,193 @@ function ProfessionalCard({ p }) {
 ========================= */
 
 function Booking() {
-  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const id = Number(
+    location.pathname.split("/").pop()
+  );
 
   const professional =
-    demoProfessionals.find(
-      (x) => x.id === Number(id)
-    ) || demoProfessionals[0];
+    professionals.find(
+      (p) => p.id === id
+    ) || professionals[0];
 
-  const user = currentUser();
-  const nav = useNavigate();
+  const user = JSON.parse(
+    localStorage.getItem("sitesetuUser") || "null"
+  );
 
   const [form, setForm] = useState({
+    service: professional.category,
     date: "",
     time: "",
     description: "",
-    budget: "",
+    budget: ""
   });
 
-  const submit = (e) => {
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleBooking = (e) => {
     e.preventDefault();
 
     if (!user) {
-      alert(
-        "Please login before booking."
-      );
-
-      nav("/login");
+      alert("Please login before booking.");
+      navigate("/login");
       return;
     }
 
-    const booking = {
+    if (!form.date || !form.time) {
+      alert("Please select date and time.");
+      return;
+    }
+
+    const oldBookings = JSON.parse(
+      localStorage.getItem("sitesetuBookings") || "[]"
+    );
+
+    const newBooking = {
       id: Date.now(),
-      professionalId: professional.id,
+      email: user.email,
       professional: professional.name,
-      professionalEmail:
-        `${professional.name
-          .toLowerCase()
-          .replace(/ /g, ".")}@sitesetu.demo`,
-      homeowner: user.name,
-      homeownerEmail: user.email,
-      service: professional.category,
+      service: form.service,
       date: form.date,
       time: form.time,
       description: form.description,
       budget: form.budget,
-      status: "Pending",
-      created: new Date().toLocaleDateString(),
+      status: "Pending"
     };
 
-    const bookings = get(KEY.bookings, []);
-
-    bookings.push(booking);
-
-    save(KEY.bookings, bookings);
-
-    const notifications = get(
-      KEY.notes,
-      []
+    localStorage.setItem(
+      "sitesetuBookings",
+      JSON.stringify([
+        ...oldBookings,
+        newBooking
+      ])
     );
-
-    notifications.push({
-      id: Date.now() + 1,
-      email: user.email,
-      title: "Booking request sent",
-      message: `Your consultation request was sent to ${professional.name}.`,
-      time: new Date().toLocaleString(),
-    });
-
-    save(KEY.notes, notifications);
 
     alert(
-      "Consultation request sent successfully!"
+      "Consultation request submitted successfully!"
     );
 
-    nav(
-      "/homeowner-dashboard?tab=bookings"
-    );
+    navigate("/dashboard");
   };
 
   return (
     <div className="auth-page">
-      <div className="auth-card booking-form">
+      <div className="auth-card register-card">
         <Link
-          to={`/professionals?category=${encodeURIComponent(
-            professional.category
-          )}`}
+          to="/professionals"
           className="auth-logo"
         >
-          ← Back to Professionals
+          ← SiteSetu
         </Link>
 
-        <div className="professional-avatar big">
-          {professional.icon}
-        </div>
-
-        <h1>
-          Book {professional.name}
-        </h1>
+        <h1>Book Consultation</h1>
 
         <p className="auth-subtitle">
-          {professional.category} •{" "}
-          {professional.location} • ⭐{" "}
-          {professional.rating}
+          Request a consultation with{" "}
+          <strong>
+            {professional.name}
+          </strong>
+          .
         </p>
 
-        <form onSubmit={submit}>
-          <label>
-            Preferred Date
-          </label>
+        <div className="booking-summary">
+          <strong>
+            {professional.category}
+          </strong>
+
+          <span>
+            📍 {professional.location}
+          </span>
+
+          <span>
+            ⭐ {professional.rating}
+          </span>
+
+          <span>
+            ₹{professional.price}/consultation
+          </span>
+        </div>
+
+        <form onSubmit={handleBooking}>
+          <label>Service</label>
+
+          <select
+            name="service"
+            value={form.service}
+            onChange={handleChange}
+          >
+            <option>
+              {professional.category}
+            </option>
+
+            <option>
+              Site Inspection
+            </option>
+
+            <option>
+              Design Consultation
+            </option>
+
+            <option>
+              Construction Planning
+            </option>
+          </select>
+
+          <label>Date</label>
 
           <input
             type="date"
-            required
+            name="date"
             value={form.date}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                date: e.target.value,
-              })
-            }
+            onChange={handleChange}
+            required
           />
 
-          <label>
-            Preferred Time
-          </label>
+          <label>Time</label>
 
           <input
             type="time"
-            required
+            name="time"
             value={form.time}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                time: e.target.value,
-              })
-            }
+            onChange={handleChange}
+            required
           />
 
           <label>
-            Project Requirements
+            Project Description
           </label>
 
           <textarea
-            required
-            placeholder="Tell the professional about your project..."
+            name="description"
+            placeholder="Describe your project..."
             value={form.description}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                description: e.target.value,
-              })
-            }
+            onChange={handleChange}
+            rows="4"
           />
 
           <label>
-            Budget (optional)
+            Estimated Budget
           </label>
 
           <input
-            placeholder="e.g. ₹5,00,000"
+            type="number"
+            name="budget"
+            placeholder="Enter your budget"
             value={form.budget}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                budget: e.target.value,
-              })
-            }
+            onChange={handleChange}
           />
 
-          <button className="auth-button">
+          <button
+            type="submit"
+            className="auth-button"
+          >
             Request Consultation
           </button>
         </form>
@@ -1193,1246 +1287,20 @@ function Booking() {
 }
 
 /* =========================
-   DASHBOARD SHELL
-========================= */
-
-function DashboardShell({
-  children,
-  title = "Professional Panel",
-}) {
-  const nav = useNavigate();
-  const user = currentUser() || {};
-
-  const logout = () => {
-    localStorage.removeItem(
-      KEY.user
-    );
-
-    localStorage.removeItem(
-      "token"
-    );
-
-    nav("/");
-  };
-
-  return (
-    <div className="dashboard-page">
-      <nav className="dashboard-navbar">
-        <Link
-          to="/"
-          className="brand"
-        >
-          <span className="logo-icon">
-            S
-          </span>
-          SiteSetu
-        </Link>
-
-        <div className="dashboard-user">
-          <span>
-            👤 {user.name || "User"}
-          </span>
-
-          <button onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </nav>
-
-      <div className="dashboard-title">
-        <h2>{title}</h2>
-      </div>
-
-      <div className="dashboard-tabs">
-        <Link
-          to={
-            user.role === "Professional"
-              ? "/professional-dashboard"
-              : "/homeowner-dashboard"
-          }
-        >
-          Overview
-        </Link>
-
-        <Link
-          to={
-            user.role === "Professional"
-              ? "/professional-dashboard?tab=profile"
-              : "/homeowner-dashboard?tab=profile"
-          }
-        >
-          My Profile
-        </Link>
-
-        <Link
-          to={
-            user.role === "Professional"
-              ? "/professional-dashboard?tab=projects"
-              : "/homeowner-dashboard?tab=projects"
-          }
-        >
-          Projects
-        </Link>
-
-        <Link
-          to={
-            user.role === "Professional"
-              ? "/professional-dashboard?tab=bookings"
-              : "/homeowner-dashboard?tab=bookings"
-          }
-        >
-          Bookings
-        </Link>
-
-        <Link
-          to="/homeowner-dashboard?tab=messages"
-        >
-          Messages
-        </Link>
-
-        <Link
-          to="/homeowner-dashboard?tab=notifications"
-        >
-          Notifications
-        </Link>
-      </div>
-
-      {children}
-    </div>
-  );
-}
-
-/* =========================
-   PROFESSIONAL DASHBOARD
-========================= */
-
-function ProfessionalDashboard() {
-  const user = currentUser() || {};
-
-  const [tab, setTab] = useState(
-    new URLSearchParams(
-      window.location.search
-    ).get("tab") || "overview"
-  );
-
-  const [profile, setProfile] =
-    useState(() => {
-      const profiles = get(
-        KEY.profiles,
-        {}
-      );
-
-      return (
-        profiles[user.email] || {
-          category: "Architect",
-          experience: "5+ Years",
-          location: "Udaipur",
-          phone: "",
-          skills:
-            "Residential Design, Planning, 3D Design",
-          about:
-            "Experienced construction and design professional helping homeowners with residential projects.",
-        }
-      );
-    });
-
-  const [saved, setSaved] =
-    useState(false);
-
-  const bookings = get(
-    KEY.bookings,
-    []
-  ).filter(
-    (b) =>
-      b.professionalEmail ===
-      user.email
-  );
-
-  const projects = get(
-    KEY.projects,
-    []
-  ).filter(
-    (p) =>
-      p.professionalEmail ===
-      user.email
-  );
-
-  const notes = get(
-    KEY.notes,
-    []
-  ).filter(
-    (n) =>
-      n.email === user.email
-  );
-
-  const setTab2 = (value) => {
-    setTab(value);
-
-    window.history.replaceState(
-      {},
-      "",
-      `/professional-dashboard${
-        value === "overview"
-          ? ""
-          : `?tab=${value}`
-      }`
-    );
-  };
-
-  const saveProfile = () => {
-    const all = get(
-      KEY.profiles,
-      {}
-    );
-
-    all[user.email] = profile;
-
-    save(KEY.profiles, all);
-
-    setSaved(true);
-
-    setTimeout(
-      () => setSaved(false),
-      1800
-    );
-  };
-
-  const status = (
-    bookingId,
-    newStatus
-  ) => {
-    const all = get(
-      KEY.bookings,
-      []
-    );
-
-    const booking = all.find(
-      (b) =>
-        b.id === bookingId
-    );
-
-    if (booking) {
-      booking.status =
-        newStatus;
-    }
-
-    save(KEY.bookings, all);
-
-    window.location.reload();
-  };
-
-  return (
-    <DashboardShell>
-      <main className="dashboard-content">
-        <div className="dashboard-header">
-          <div>
-            <span className="eyebrow">
-              PROFESSIONAL DASHBOARD
-            </span>
-
-            <h1>
-              Welcome,{" "}
-              {user.name ||
-                "Professional"}{" "}
-              👋
-            </h1>
-
-            <p>
-              Manage your profile,
-              projects and consultation
-              requests.
-            </p>
-          </div>
-
-          <button
-            className="primary-btn"
-            onClick={() =>
-              setTab2("profile")
-            }
-          >
-            Edit Profile
-          </button>
-        </div>
-
-        <div className="dashboard-grid">
-          <Stat
-            icon="📁"
-            n={projects.length}
-            t="Active Projects"
-          />
-
-          <Stat
-            icon="📅"
-            n={bookings.length}
-            t="Bookings"
-          />
-
-          <Stat
-            icon="💬"
-            n={notes.length}
-            t="Messages"
-          />
-        </div>
-
-        <div className="dashboard-tabs inner-tabs">
-          {[
-            ["overview", "Overview"],
-            ["profile", "My Profile"],
-            ["projects", "Projects"],
-            ["bookings", "Bookings"],
-            ["notifications", "Notifications"],
-          ].map((item) => (
-            <button
-              key={item[0]}
-              className={
-                tab === item[0]
-                  ? "active"
-                  : ""
-              }
-              onClick={() =>
-                setTab2(item[0])
-              }
-            >
-              {item[1]}
-            </button>
-          ))}
-        </div>
-
-        {tab === "overview" && (
-          <>
-            <section className="dashboard-section-card">
-              <h2>
-                Quick Actions
-              </h2>
-
-              <div className="quick-grid">
-                <button
-                  onClick={() =>
-                    setTab2("profile")
-                  }
-                >
-                  ✏️ Update Profile
-                </button>
-
-                <button
-                  onClick={() =>
-                    setTab2("projects")
-                  }
-                >
-                  📁 Manage Projects
-                </button>
-
-                <button
-                  onClick={() =>
-                    setTab2("bookings")
-                  }
-                >
-                  📅 Review Bookings
-                </button>
-              </div>
-            </section>
-
-            <section className="dashboard-section-card">
-              <h2>
-                Recent Requests
-              </h2>
-
-              {bookings.length ? (
-                <BookingList
-                  bookings={bookings}
-                  professional
-                  onStatus={status}
-                />
-              ) : (
-                <Empty
-                  title="No consultation requests"
-                  text="New homeowner requests will appear here."
-                  icon="📅"
-                />
-              )}
-            </section>
-          </>
-        )}
-
-        {tab === "profile" && (
-          <section className="dashboard-section-card">
-            <h2>
-              Professional Profile
-            </h2>
-
-            <div className="profile-form">
-              <Field
-                label="Full Name"
-                value={user.name || ""}
-                disabled
-              />
-
-              <Field
-                label="Email"
-                value={user.email || ""}
-                disabled
-              />
-
-              <label>
-                Professional Category
-
-                <select
-                  value={profile.category}
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      category:
-                        e.target.value,
-                    })
-                  }
-                >
-                  <option>
-                    Architect
-                  </option>
-
-                  <option>
-                    Civil Engineer
-                  </option>
-
-                  <option>
-                    Interior Designer
-                  </option>
-                </select>
-              </label>
-
-              <label>
-                Experience
-
-                <select
-                  value={
-                    profile.experience
-                  }
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      experience:
-                        e.target.value,
-                    })
-                  }
-                >
-                  <option>
-                    1-2 Years
-                  </option>
-
-                  <option>
-                    3-5 Years
-                  </option>
-
-                  <option>
-                    5+ Years
-                  </option>
-
-                  <option>
-                    10+ Years
-                  </option>
-                </select>
-              </label>
-
-              <Field
-                label="Location"
-                value={
-                  profile.location
-                }
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    location:
-                      e.target.value,
-                  })
-                }
-              />
-
-              <Field
-                label="Phone"
-                value={
-                  profile.phone
-                }
-                placeholder="Enter phone number"
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    phone:
-                      e.target.value,
-                  })
-                }
-              />
-
-              <label className="full-width">
-                Skills
-
-                <input
-                  value={
-                    profile.skills
-                  }
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      skills:
-                        e.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <label className="full-width">
-                About
-
-                <textarea
-                  value={
-                    profile.about
-                  }
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      about:
-                        e.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <div className="full-width">
-                <button
-                  className="save-profile-btn"
-                  onClick={
-                    saveProfile
-                  }
-                >
-                  {saved
-                    ? "✓ Profile Saved"
-                    : "Save Profile"}
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {tab === "projects" && (
-          <Projects
-            professionalEmail={
-              user.email
-            }
-          />
-        )}
-
-        {tab === "bookings" && (
-          <section className="dashboard-section-card">
-            <h2>
-              Consultation Bookings
-            </h2>
-
-            {bookings.length ? (
-              <BookingList
-                bookings={bookings}
-                professional
-                onStatus={status}
-              />
-            ) : (
-              <Empty
-                title="No bookings yet"
-                text="Homeowner requests will appear here."
-                icon="📅"
-              />
-            )}
-          </section>
-        )}
-
-        {tab === "notifications" && (
-          <section className="dashboard-section-card">
-            <h2>
-              Notifications
-            </h2>
-
-            {notes.length ? (
-              notes.map((note) => (
-                <div
-                  className="notification"
-                  key={note.id}
-                >
-                  <b>
-                    {note.title}
-                  </b>
-
-                  <p>
-                    {note.message}
-                  </p>
-
-                  <small>
-                    {note.time}
-                  </small>
-                </div>
-              ))
-            ) : (
-              <Empty
-                title="All caught up"
-                text="New bookings, messages and platform updates will appear here."
-                icon="🔔"
-              />
-            )}
-          </section>
-        )}
-      </main>
-    </DashboardShell>
-  );
-}
-
-/* =========================
-   HOMEOWNER DASHBOARD
-========================= */
-
-function HomeownerDashboard() {
-  const user = currentUser() || {};
-
-  const [search, setSearch] =
-    useState("");
-
-  const [category, setCategory] =
-    useState("All");
-
-  const [tab, setTab] =
-    useState(
-      new URLSearchParams(
-        window.location.search
-      ).get("tab") || "overview"
-    );
-
-  const bookings = get(
-    KEY.bookings,
-    []
-  ).filter(
-    (b) =>
-      b.homeownerEmail ===
-      user.email
-  );
-
-  const notes = get(
-    KEY.notes,
-    []
-  ).filter(
-    (n) =>
-      n.email === user.email
-  );
-
-  const filtered =
-    demoProfessionals.filter(
-      (p) =>
-        (category === "All" ||
-          p.category === category) &&
-        `${p.name} ${p.category} ${p.location}`
-          .toLowerCase()
-          .includes(
-            search.toLowerCase()
-          )
-    );
-
-  const setTab2 = (value) => {
-    setTab(value);
-
-    window.history.replaceState(
-      {},
-      "",
-      `/homeowner-dashboard${
-        value === "overview"
-          ? ""
-          : `?tab=${value}`
-      }`
-    );
-  };
-
-  return (
-    <DashboardShell title="Homeowner Panel">
-      <main className="dashboard-content">
-        <div className="dashboard-header">
-          <div>
-            <span className="eyebrow">
-              HOMEOWNER DASHBOARD
-            </span>
-
-            <h1>
-              Find the right
-              professional.
-            </h1>
-
-            <p>
-              Search, compare and book
-              trusted construction experts.
-            </p>
-          </div>
-
-          <Link
-            className="primary-btn"
-            to="/professionals"
-          >
-            Browse Professionals
-          </Link>
-        </div>
-
-        <div className="dashboard-grid">
-          <Stat
-            icon="📁"
-            n={
-              bookings.filter(
-                (b) =>
-                  b.status ===
-                  "Accepted"
-              ).length
-            }
-            t="Active Projects"
-          />
-
-          <Stat
-            icon="📅"
-            n={bookings.length}
-            t="Bookings"
-          />
-
-          <Stat
-            icon="💬"
-            n={notes.length}
-            t="Messages"
-          />
-        </div>
-
-        <div className="dashboard-tabs inner-tabs">
-          {[
-            ["overview", "Overview"],
-            ["profile", "My Profile"],
-            ["projects", "Projects"],
-            ["bookings", "Bookings"],
-            ["messages", "Messages"],
-            ["notifications", "Notifications"],
-          ].map((item) => (
-            <button
-              key={item[0]}
-              className={
-                tab === item[0]
-                  ? "active"
-                  : ""
-              }
-              onClick={() =>
-                setTab2(item[0])
-              }
-            >
-              {item[1]}
-            </button>
-          ))}
-        </div>
-
-        {tab === "overview" && (
-          <>
-            <div className="search-panel">
-              <input
-                placeholder="Search by name, category or location..."
-                value={search}
-                onChange={(e) =>
-                  setSearch(
-                    e.target.value
-                  )
-                }
-              />
-
-              <select
-                value={category}
-                onChange={(e) =>
-                  setCategory(
-                    e.target.value
-                  )
-                }
-              >
-                <option>
-                  All
-                </option>
-
-                <option>
-                  Architect
-                </option>
-
-                <option>
-                  Civil Engineer
-                </option>
-
-                <option>
-                  Interior Designer
-                </option>
-              </select>
-            </div>
-
-            <section className="dashboard-section-card">
-              <h2>
-                Recommended Professionals
-              </h2>
-
-              <div className="professional-grid">
-                {filtered.map(
-                  (professional) => (
-                    <ProfessionalCard
-                      key={
-                        professional.id
-                      }
-                      p={professional}
-                    />
-                  )
-                )}
-              </div>
-
-              {!filtered.length && (
-                <Empty
-                  title="No professionals found"
-                  text="Try another search or category."
-                />
-              )}
-            </section>
-          </>
-        )}
-
-        {tab === "profile" && (
-          <section className="dashboard-section-card">
-            <h2>
-              My Profile
-            </h2>
-
-            <p>
-              Your account is ready.
-              You can update your
-              professional preferences
-              during booking.
-            </p>
-
-            <div className="profile-summary">
-              <b>{user.name}</b>
-              <span>{user.email}</span>
-              <span>
-                🏠 Homeowner
-              </span>
-            </div>
-          </section>
-        )}
-
-        {tab === "projects" && (
-          <Projects
-            homeownerEmail={
-              user.email
-            }
-          />
-        )}
-
-        {tab === "bookings" && (
-          <section className="dashboard-section-card">
-            <h2>
-              My Bookings
-            </h2>
-
-            {bookings.length ? (
-              <BookingList
-                bookings={bookings}
-              />
-            ) : (
-              <Empty
-                title="No bookings yet"
-                text="Find a professional and request your first consultation."
-                icon="📅"
-              />
-            )}
-          </section>
-        )}
-
-        {tab === "messages" && (
-          <Messages
-            email={user.email}
-          />
-        )}
-
-        {tab === "notifications" && (
-          <section className="dashboard-section-card">
-            <h2>
-              Notifications
-            </h2>
-
-            {notes.length ? (
-              notes.map((note) => (
-                <div
-                  className="notification"
-                  key={note.id}
-                >
-                  <b>
-                    {note.title}
-                  </b>
-
-                  <p>
-                    {note.message}
-                  </p>
-
-                  <small>
-                    {note.time}
-                  </small>
-                </div>
-              ))
-            ) : (
-              <Empty
-                title="All caught up"
-                text="New bookings, messages and platform updates will appear here."
-                icon="🔔"
-              />
-            )}
-          </section>
-        )}
-      </main>
-    </DashboardShell>
-  );
-}
-
-/* =========================
-   BOOKING LIST
-========================= */
-
-function BookingList({
-  bookings,
-  professional,
-  onStatus,
-}) {
-  return (
-    <div className="booking-list">
-      {bookings.map((booking) => (
-        <div
-          className="booking-item"
-          key={booking.id}
-        >
-          <div>
-            <h3>
-              {professional
-                ? booking.homeowner
-                : booking.professional}
-            </h3>
-
-            <p>
-              {booking.service} •{" "}
-              {booking.date} at{" "}
-              {booking.time}
-            </p>
-
-            <p>
-              {booking.description}
-            </p>
-
-            {booking.budget && (
-              <small>
-                Budget:{" "}
-                {booking.budget}
-              </small>
-            )}
-          </div>
-
-          <div className="booking-actions">
-            <span
-              className={`status ${booking.status.toLowerCase()}`}
-            >
-              {booking.status}
-            </span>
-
-            {professional &&
-              booking.status ===
-                "Pending" && (
-                <>
-                  <button
-                    className="small-btn"
-                    onClick={() =>
-                      onStatus(
-                        booking.id,
-                        "Accepted"
-                      )
-                    }
-                  >
-                    Accept
-                  </button>
-
-                  <button
-                    className="small-btn danger"
-                    onClick={() =>
-                      onStatus(
-                        booking.id,
-                        "Rejected"
-                      )
-                    }
-                  >
-                    Reject
-                  </button>
-                </>
-              )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* =========================
-   PROJECTS
-========================= */
-
-function Projects({
-  homeownerEmail,
-  professionalEmail,
-}) {
-  const [items, setItems] =
-    useState(() =>
-      get(
-        KEY.projects,
-        []
-      ).filter(
-        (project) =>
-          (homeownerEmail &&
-            project.homeownerEmail ===
-              homeownerEmail) ||
-          (professionalEmail &&
-            project.professionalEmail ===
-              professionalEmail)
-      )
-    );
-
-  const [name, setName] =
-    useState("");
-
-  const add = () => {
-    if (!name.trim()) return;
-
-    const project = {
-      id: Date.now(),
-      name,
-      status: "Planning",
-      progress: 10,
-      homeownerEmail,
-      professionalEmail,
-    };
-
-    const all = get(
-      KEY.projects,
-      []
-    );
-
-    all.push(project);
-
-    save(KEY.projects, all);
-
-    setItems([
-      ...items,
-      project,
-    ]);
-
-    setName("");
-  };
-
-  return (
-    <section className="dashboard-section-card">
-      <div className="section-row">
-        <div>
-          <h2>
-            Projects
-          </h2>
-
-          <p>
-            Track your construction
-            and design projects.
-          </p>
-        </div>
-
-        <div className="add-row">
-          <input
-            value={name}
-            onChange={(e) =>
-              setName(
-                e.target.value
-              )
-            }
-            placeholder="New project name"
-          />
-
-          <button
-            className="primary-btn"
-            onClick={add}
-          >
-            + Add Project
-          </button>
-        </div>
-      </div>
-
-      {items.length ? (
-        <div className="project-list">
-          {items.map((project) => (
-            <div
-              className="project-item"
-              key={project.id}
-            >
-              <div>
-                <h3>
-                  {project.name}
-                </h3>
-
-                <span>
-                  {project.status}
-                </span>
-              </div>
-
-              <div className="progress">
-                <i
-                  style={{
-                    width: `${project.progress}%`,
-                  }}
-                />
-              </div>
-
-              <b>
-                {project.progress}%
-              </b>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Empty
-          title="No projects yet"
-          text="Create a project to start tracking progress."
-          icon="📁"
-        />
-      )}
-    </section>
-  );
-}
-
-/* =========================
-   MESSAGES
-========================= */
-
-function Messages({ email }) {
-  const [text, setText] =
-    useState("");
-
-  const [messages, setMessages] =
-    useState(() =>
-      get(
-        KEY.messages,
-        []
-      ).filter(
-        (message) =>
-          message.email ===
-          email
-      )
-    );
-
-  const send = () => {
-    if (!text.trim()) return;
-
-    const message = {
-      id: Date.now(),
-      email,
-      text,
-      from: "You",
-      time: new Date().toLocaleTimeString(),
-    };
-
-    const all = get(
-      KEY.messages,
-      []
-    );
-
-    all.push(message);
-
-    save(KEY.messages, all);
-
-    setMessages([
-      ...messages,
-      message,
-    ]);
-
-    setText("");
-  };
-
-  return (
-    <section className="dashboard-section-card">
-      <h2>
-        Messages
-      </h2>
-
-      <div className="chat-box">
-        {messages.length ? (
-          messages.map(
-            (message) => (
-              <div
-                className="chat-msg"
-                key={message.id}
-              >
-                <b>
-                  {message.from}
-                </b>
-
-                <p>
-                  {message.text}
-                </p>
-
-                <small>
-                  {message.time}
-                </small>
-              </div>
-            )
-          )
-        ) : (
-          <Empty
-            title="No messages"
-            text="Your professional conversations will appear here."
-            icon="💬"
-          />
-        )}
-      </div>
-
-      <div className="chat-input">
-        <input
-          value={text}
-          onChange={(e) =>
-            setText(
-              e.target.value
-            )
-          }
-          placeholder="Write a message..."
-          onKeyDown={(e) => {
-            if (
-              e.key === "Enter"
-            ) {
-              send();
-            }
-          }}
-        />
-
-        <button
-          className="primary-btn"
-          onClick={send}
-        >
-          Send
-        </button>
-      </div>
-    </section>
-  );
-}
-
-/* =========================
    ADMIN
 ========================= */
 
 function Admin() {
-  const [list, setList] =
-    useState(
-      demoProfessionals
-    );
+  const [professionalsList, setProfessionalsList] =
+    useState(professionals);
 
-  const verify = (id) => {
-    setList(
-      list.map((professional) =>
+  const verifyProfessional = (id) => {
+    setProfessionalsList((current) =>
+      current.map((professional) =>
         professional.id === id
           ? {
               ...professional,
-              verified: true,
+              verified: true
             }
           : professional
       )
@@ -2440,8 +1308,22 @@ function Admin() {
   };
 
   return (
-    <DashboardShell title="Admin Panel">
-      <main className="dashboard-content">
+    <div className="dashboard-page">
+      <nav className="dashboard-nav">
+        <Link to="/" className="brand">
+          <span className="logo-icon">S</span>
+          SiteSetu Admin
+        </Link>
+
+        <Link
+          to="/"
+          className="login-btn"
+        >
+          Home
+        </Link>
+      </nav>
+
+      <main className="dashboard-container">
         <div className="dashboard-header">
           <div>
             <span className="eyebrow">
@@ -2453,84 +1335,77 @@ function Admin() {
             </h1>
 
             <p>
-              Review professional
-              profiles and platform
-              activity.
+              Review and verify professional profiles.
             </p>
           </div>
         </div>
 
         <div className="dashboard-grid">
-          <Stat
-            icon="👷"
-            n={list.length}
-            t="Professionals"
-          />
+          <div className="dashboard-card">
+            <h3>Total Professionals</h3>
 
-          <Stat
-            icon="✓"
-            n={
-              list.filter(
-                (p) => p.verified
-              ).length
-            }
-            t="Verified"
-          />
+            <strong>
+              {professionalsList.length}
+            </strong>
+          </div>
 
-          <Stat
-            icon="⏳"
-            n={
-              list.filter(
-                (p) => !p.verified
-              ).length
-            }
-            t="Pending Review"
-          />
+          <div className="dashboard-card">
+            <h3>Verified</h3>
+
+            <strong>
+              {
+                professionalsList.filter(
+                  (p) => p.verified
+                ).length
+              }
+            </strong>
+          </div>
+
+          <div className="dashboard-card">
+            <h3>Pending Review</h3>
+
+            <strong>
+              {
+                professionalsList.filter(
+                  (p) => !p.verified
+                ).length
+              }
+            </strong>
+          </div>
         </div>
 
-        <section className="dashboard-section-card">
-          <h2>
-            Professional Verification
-          </h2>
-
+        <section className="dashboard-section">
           <div className="booking-list">
-            {list.map(
+            {professionalsList.map(
               (professional) => (
                 <div
-                  className="booking-item"
+                  className="booking-card"
                   key={professional.id}
                 >
                   <div>
                     <h3>
-                      {
-                        professional.name
-                      }
+                      {professional.name}
                     </h3>
 
                     <p>
-                      {
-                        professional.category
-                      }{" "}
-                      •{" "}
-                      {
-                        professional.location
-                      }{" "}
-                      •{" "}
-                      {
-                        professional.experience
-                      }
+                      {professional.category}
                     </p>
+
+                    <small>
+                      {professional.location} •{" "}
+                      {professional.experience} years
+                    </small>
                   </div>
 
                   {professional.verified ? (
                     <span className="status accepted">
-                      ✓ Verified
+                      Verified
                     </span>
                   ) : (
                     <button
                       className="primary-btn"
                       onClick={() =>
-                        verify(
+                        verifyProfessional(
                           professional.id
                         )
                       }
@@ -2544,71 +1419,12 @@ function Admin() {
           </div>
         </section>
       </main>
-    </DashboardShell>
-  );
-}
-
-/* =========================
-   SMALL COMPONENTS
-========================= */
-
-function Stat({ icon, n, t }) {
-  return (
-    <div className="dashboard-card">
-      <span className="dashboard-icon">
-        {icon}
-      </span>
-
-      <strong>{n}</strong>
-
-      <h3>{t}</h3>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  disabled,
-  placeholder,
-}) {
-  return (
-    <label>
-      {label}
-
-      <input
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        placeholder={placeholder}
-      />
-    </label>
-  );
-}
-
-function Empty({
-  title,
-  text,
-  icon,
-}) {
-  return (
-    <div className="empty-state">
-      {icon && (
-        <div className="empty-section-icon">
-          {icon}
-        </div>
-      )}
-
-      <h3>{title}</h3>
-
-      <p>{text}</p>
     </div>
   );
 }
 
 /* =========================
-   ROUTES
+   APP ROUTES
 ========================= */
 
 function App() {
@@ -2621,46 +1437,27 @@ function App() {
 
       <Route
         path="/login"
-        element={<Auth />}
+        element={<Login />}
       />
 
       <Route
         path="/register"
-        element={<Auth register />}
+        element={<Register />}
       />
 
-      {/* NEW SERVICE PAGES */}
       <Route
-        path="/service/:category"
-        element={<ServiceDetails />}
+        path="/dashboard"
+        element={<Dashboard />}
       />
 
-      {/* PROFESSIONAL DIRECTORY */}
       <Route
         path="/professionals"
         element={<Professionals />}
       />
 
-      {/* BOOKING */}
       <Route
         path="/book/:id"
         element={<Booking />}
-      />
-
-      {/* DASHBOARDS */}
-      <Route
-        path="/professional-dashboard"
-        element={<ProfessionalDashboard />}
-      />
-
-      <Route
-        path="/homeowner-dashboard"
-        element={<HomeownerDashboard />}
-      />
-
-      <Route
-        path="/dashboard"
-        element={<HomeownerDashboard />}
       />
 
       <Route
@@ -2668,13 +1465,6 @@ function App() {
         element={<Admin />}
       />
 
-      {/* ALL SERVICES */}
-      <Route
-        path="/services"
-        element={<Professionals />}
-      />
-
-      {/* FALLBACK */}
       <Route
         path="*"
         element={<Home />}
