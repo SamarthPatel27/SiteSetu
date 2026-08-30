@@ -12,6 +12,15 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "SiteSetu backend is live!"
+  });
+});
+
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -19,6 +28,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Services API
 app.get("/api/services", (req, res) => {
   res.json([
     {
@@ -42,6 +52,7 @@ app.get("/api/services", (req, res) => {
   ]);
 });
 
+// Start server
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SiteSetu API running on port ${PORT}`);
 });
