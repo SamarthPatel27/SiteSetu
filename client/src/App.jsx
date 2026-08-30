@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  BrowserRouter,
   Link,
   Routes,
   Route,
@@ -349,6 +348,7 @@ function Login() {
 
         <form onSubmit={handleLogin}>
           <label>Email Address</label>
+
           <input
             type="email"
             placeholder="Enter your email"
@@ -358,6 +358,7 @@ function Login() {
           />
 
           <label>Password</label>
+
           <input
             type="password"
             placeholder="Enter your password"
@@ -388,12 +389,10 @@ function Login() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+    </Routes>
   );
 }
 
